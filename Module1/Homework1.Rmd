@@ -1,0 +1,195 @@
+---
+title: "Visual Analytics - Homework 1"
+author: "Jered Ataky"
+date: "9/12/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Libraries
+
+Loading necessary library in advance prior starting work.
+
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(scales)
+
+```
+
+**Principles of Data Visualization and Introduction to ggplot2**
+
+I have provided you with data about the 5,000 fastest growing companies in the US, as compiled by Inc. magazine. lets read this in:
+
+
+```{r}
+inc <- read.csv("https://raw.githubusercontent.com/charleyferrari/CUNY_DATA_608/master/module1/Data/inc5000_data.csv", header= TRUE, stringsAsFactors = TRUE)
+```
+
+
+And lets preview this data:
+
+```{r}
+head(inc)
+```
+
+
+```{r}
+summary(inc)
+```
+
+**Think a bit on what these summaries mean. Use the space below to add some more relevant non-visual exploratory information you think helps you understand this data:**
+
+These summaries give an idea on descriptive statistics of the data. They provide some high level information important in understanding of the data we are working on. 
+With this summary, we can already pictures the distribution of the datasets in the sense of which City for example have more fatest growing companies in the US and different predominant industries. 
+
+
+Overview of the data with str function...
+```{r}
+str(inc)
+```
+
+Check for missing values in each feature
+
+```{r}
+colSums(is.na(inc))
+```
+
+Top 10 cities with fastest growing companies...
+
+```{r}
+top10 <- inc %>% arrange(desc(Growth_Rate)) %>% head(1000) %>% count(City, sort = TRUE) %>% head(10)
+top10
+```
+
+5 predominant industries in fastest growing companies...
+
+```{r message=FALSE, warning=FALSE}
+top5 <-inc%>%
+  group_by(Industry)%>%
+  summarize(Avg_growth=mean(Growth_Rate))%>%
+  top_n(5,Avg_growth)%>%
+  arrange(desc(Avg_growth))
+top5
+```
+
+
+
+## Question 1
+
+Create a graph that shows the distribution of companies in the dataset by State (ie how many are in each state). There are a lot of States, so consider which axis you should use. This visualization is ultimately going to be consumed on a 'portrait' oriented screen (ie taller than wide), which should further guide your layout choices.
+
+```{r}
+# Group te dataset by state
+
+data <- inc %>% 
+    group_by(State) %>% 
+    tally() %>%
+  rename(count = n) %>%
+  arrange(desc(count))
+
+# Plot the data
+
+g <- ggplot(data, aes(x = reorder(State, count), y = count)) 
+g <- g + geom_bar(stat = "identity", fill = 'green') + coord_flip() 
+g <- g + ggtitle("Distribution of 5,000 Fastest Growing Companies by State")
+g <- g + labs(x = "State", y = "Count")
+g <- g + theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
+g
+```
+The graph shows that the state of California has the most fastest growing companies in the US followed by Texas then New York.
+
+## Quesiton 2
+
+Lets dig in on the state with the 3rd most companies in the data set. Imagine you work for the state and are interested in how many people are employed by companies in different industries. Create a plot that shows the average and/or median employment by industry for companies in this state (only use cases with full data, use R's `complete.cases()` function.) In addition to this, your graph should show how variable the ranges are, and you should deal with outliers.
+
+
+As shown and stated in question 3. The state with the 3rd most companies in the data set is NY.
+
+In below code, I will first filter NY then call call different functions
+to get the needed information
+
+```{r message=FALSE, warning=FALSE}
+
+ 
+ny <- inc[complete.cases(inc),] %>%
+  inner_join(state3rd, by = "State")
+
+# Mean employees by industry
+
+emp_means <- aggregate(Employees ~ Industry, ny, mean)
+
+# Number of maximum average employee
+
+emp_means_max <- max(emp_means$Employees)
+
+# Plotting by removing outliers
+
+g <- ggplot(ny, aes(x = reorder(Industry,Employees,mean), y = Employees))
+g <- g + geom_boxplot(outlier.shape = NA, show.legend=F) + coord_flip()
+g <- g + labs(x = "Industry", y = "employees", title="Mean Employee Size by Industry")
+
+g <- g + geom_point(data = emp_means, aes(x=Industry, y=Employees), color='green', size = 2)
+
+g <- g + theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
+
+
+g <- g +  scale_y_continuous(limits = c(0,emp_means_max), breaks = seq(0, emp_means_max, 200))
+g
+```
+
+
+Let scale the data for a good visualization. One reason I choose to do so is that Business Product & Services industry has a very high outlier.
+
+Let apply log transformation...
+
+```{r message=FALSE, warning=FALSE}
+
+g <- g + scale_y_log10(limits = c(1, means_max))
+g <- g + labs(caption = "(logarithmic scale spacing)")
+g <- g + theme(plot.caption = element_text(size = 8))
+g
+```
+
+
+
+## Question 3
+
+Now imagine you work for an investor and want to see which industries generate the most revenue per employee. Create a chart that makes this information clear. Once again, the distribution per industry should be shown.
+
+
+First I am going to filter by most revenue per employee by industry,
+then plot according to that filter.
+
+(I will plot this in NY then for entire US since I am not sure if the question is about the investor wants the information for Ny only or US in general)
+
+1. I assume the investor considers the state with the 3rd most companies in the data set...
+
+```{r message=FALSE, warning=FALSE}
+
+high_rev_industry <- inc %>%
+  filter(State== "NY") %>% 
+  group_by(Industry) %>% 
+  summarise(avg_revenue = mean(Revenue))
+
+
+ggplot(high_rev_industry, aes(x=reorder(Industry, avg_revenue), y=avg_revenue))+geom_bar(stat="identity", fill="magenta")+coord_flip()+labs(title="Average Revenue per Employee by industry in NY", x="Industry", y="Average Revenue per Employee")
+```
+
+
+2. I assume in the investor wants to see that industry in entire US
+
+
+```{r message=FALSE, warning=FALSE}
+
+high_rev_industry <- inc %>%
+  group_by(Industry) %>% 
+  summarise(avg_revenue = mean(Revenue))
+
+
+ggplot(high_rev_industry, aes(x=reorder(Industry, avg_revenue), y=avg_revenue))+geom_bar(stat="identity", fill="green")+coord_flip()+labs(title="Average Revenue per Employee by industry in US", x="Industry", y="Average Revenue per Employee")
+```
