@@ -93,7 +93,7 @@ shinyApp(ui = ui, server = server)
 
 Often you are asked whether particular States are improving their mortality rates (per cause) faster than, or slower than, the national average. Create a visualization that lets your clients see this for themselves for one cause of death at the time. Keep in mind that the national average should be weighted by the national population.
 
-**shinyApp link:**
+**shinyApp link:https://ataky.shinyapps.io/Ataky_app2/**
 
 ```{r eval = FALSE}
 
