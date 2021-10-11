@@ -32,7 +32,7 @@ cdc_data <- read.csv("https://raw.githubusercontent.com/jnataky/Visual_Analytics
 As a researcher, you frequently compare mortality rates from particular causes across different States. You need a visualization that will let you see (for 2010 only) the crude mortality rate, across all States, from one cause (for example, Neoplasms, which are effectively cancers). Create a visualization that allows you to rank States by crude mortality for each cause of death.
 
 
-**shinyApp link:**
+**shinyApp link:*https://ataky.shinyapps.io/Ataky_app001/*
 
 ```{r eval = FALSE}
 cdc_data <- read.csv("https://raw.githubusercontent.com/charleyferrari/CUNY_DATA_608/master/module3/data/cleaned-cdc-mortality-1999-2010-2.csv")
