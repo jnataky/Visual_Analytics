@@ -1,0 +1,13 @@
+name: Ataky_App1
+title: Ataky_App1
+username:
+account: ataky
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 4840815
+bundleId: 5125076
+url: https://ataky.shinyapps.io/Ataky_App1/
+when: 1633917104.29846
+lastSyncTime: 1633917104.29846
+asMultiple: FALSE
+asStatic: FALSE

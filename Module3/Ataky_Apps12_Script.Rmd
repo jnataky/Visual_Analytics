@@ -1,0 +1,170 @@
+---
+title: "Interactive Visualizations in R"
+author: "Jered Ataky"
+date: "10/10/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Libraries
+
+Loading necessary libraries 
+
+```{r warning=FALSE, message=FALSE}
+library(shiny)
+library(plotly)
+library(rsconnect)
+```
+
+## Load the Data
+
+```{r}
+cdc_data <- read.csv("https://raw.githubusercontent.com/jnataky/Visual_Analytics/main/Module3/cleaned-cdc-mortality-1999-2010-2.csv")
+```
+
+
+## Question 1
+
+As a researcher, you frequently compare mortality rates from particular causes across different States. You need a visualization that will let you see (for 2010 only) the crude mortality rate, across all States, from one cause (for example, Neoplasms, which are effectively cancers). Create a visualization that allows you to rank States by crude mortality for each cause of death.
+
+
+**shinyApp link:**
+
+```{r eval = FALSE}
+cdc_data <- read.csv("https://raw.githubusercontent.com/charleyferrari/CUNY_DATA_608/master/module3/data/cleaned-cdc-mortality-1999-2010-2.csv")
+
+library(shiny)
+library(shinyWidgets)
+
+# Define UI for application that draws a bar graph
+
+
+ui <- fluidPage(
+    
+    # use a gradient in background
+    setBackgroundColor(
+        color = c("#F7FBFF", "#2171B5"),
+        gradient = "linear",
+        direction = "bottom"
+    ),
+    
+    # Application title
+    titlePanel(div("Cause of Crude Mortality Rate Across US States", style = "color: #ff0000")), 
+    
+    
+    # Sidebar with a slider input for number of bins 
+    sidebarLayout(
+        selectInput("select", label = h3("Causes of Death"), 
+                    choices = cdc_data$ICD.Chapter, 
+                    selected = 1,
+                    width = '100%'),
+        
+        # Show a plot of the generated distribution
+        
+        mainPanel(
+            plotOutput("distPlot")
+        )
+    )
+)
+
+# Define server logic required to draw a bar graph
+
+server <- function(input, output) {
+    output$distPlot <- renderPlot({
+        ggplot(cdc_data[cdc_data$ICD.Chapter == input$select,] , aes(x = reorder(State, Crude.Rate), y = Crude.Rate)) +
+            labs(x = "State", y = "Crude Mortality Rate") +  
+            geom_bar(stat = "identity", fill = "#ff0000") +
+            coord_flip() +
+            theme_minimal()
+    }, width = 'auto', height = 'auto')
+}
+
+# Run the application
+shinyApp(ui = ui, server = server)
+```
+
+
+
+# Question 2
+
+Often you are asked whether particular States are improving their mortality rates (per cause) faster than, or slower than, the national average. Create a visualization that lets your clients see this for themselves for one cause of death at the time. Keep in mind that the national average should be weighted by the national population.
+
+**shinyApp link:**
+
+```{r eval = FALSE}
+
+library(shiny)
+library(plotly)
+library(rsconnect)
+
+# Import the Data
+
+cdc_data<- read.csv("https://raw.githubusercontent.com/charleyferrari/CUNY_DATA_608/master/module3/data/cleaned-cdc-mortality-1999-2010-2.csv")
+
+
+# Define UI for application
+
+ui <- fluidPage(
+    
+    # use a gradient in background
+    setBackgroundColor(
+        color = c("#F7FBFF", "#2171B5"),
+        gradient = "linear",
+        direction = "bottom"
+    ),
+    
+    titlePanel("Crude Mortality Rate Across US States Vs National Average"), 
+    sidebarPanel(
+        selectInput("select1", label = strong("State"), 
+                    choices = levels(as.factor(cdc_data$State)), 
+                    selected = 1),
+        
+        selectInput("select2", label = strong("Cause of Death"), 
+                    choices = levels(as.factor(cdc_data$ICD.Chapter)), 
+                    selected = 1),
+        
+        width = "auto"
+    ),
+    
+    mainPanel(
+        plotOutput("distPlot")
+    )
+)
+
+
+# Define server logic required 
+
+server <- function(input, output) {
+    output$distPlot <- renderPlot({
+        cdc_data %>% 
+            group_by(Year, ICD.Chapter) %>%
+            mutate(N_Population = sum(Population),
+                   N_Count = sum(Deaths), 
+                   N_Crude_Rate = 10^5*(N_Count/N_Population)) %>% 
+            group_by(Year, ICD.Chapter, State) %>%
+            mutate(S_Count=sum(Deaths),
+                   S_Crude_Rate=10^5*(S_Count/Population)) %>%
+            
+            select(ICD.Chapter, State, Year, N_Crude_Rate, S_Crude_Rate) %>% 
+            filter(ICD.Chapter == input$select2, State == input$select1) %>% 
+            
+            ggplot() +
+            geom_bar(aes(x = Year, weight = S_Crude_Rate), fill = "#ff0000") +
+            labs(x = "State", y = "Crude Mortality Rate") +
+            
+            geom_line(aes(x = Year, y = N_Crude_Rate, linetype = "National Average"), col = "blue", lwd = 1) +
+            scale_linetype(name = NULL) +
+            theme_minimal()
+    }
+    )
+}
+
+
+# Run the application 
+shinyApp(ui = ui, server = server)
+```
+
